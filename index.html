@@ -188,11 +188,11 @@
     <div class="row">
       <div class="field">
         <label class="req" for="f_data">Data</label>
-        <input id="f_data" type="date">
+        <input id="f_data" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="DD/MM/AAAA">
       </div>
       <div class="field">
         <label class="req" for="f_horario">Horário</label>
-        <input id="f_horario" type="time">
+        <input id="f_horario" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="HH:MM">
       </div>
     </div>
 
@@ -279,11 +279,30 @@
   var notice = document.getElementById('shareNotice');
   var btnCompartilhar = document.getElementById('btnCompartilhar');
 
-  function formatarData(iso) {
-    if (!iso) return '';
-    var p = iso.split('-');
-    if (p.length !== 3) return iso;
-    return p[2] + '/' + p[1] + '/' + p[0];
+  function mascaraData(v) {
+    var d = v.replace(/\D/g, '').slice(0, 8);
+    if (d.length > 4) return d.slice(0, 2) + '/' + d.slice(2, 4) + '/' + d.slice(4);
+    if (d.length > 2) return d.slice(0, 2) + '/' + d.slice(2);
+    return d;
+  }
+
+  function mascaraHora(v) {
+    var d = v.replace(/\D/g, '').slice(0, 4);
+    if (d.length > 2) return d.slice(0, 2) + ':' + d.slice(2);
+    return d;
+  }
+
+  function dataValida(v) {
+    var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v);
+    if (!m) return false;
+    var d = +m[1], mes = +m[2];
+    return d >= 1 && d <= 31 && mes >= 1 && mes <= 12;
+  }
+
+  function horaValida(v) {
+    var m = /^(\d{2}):(\d{2})$/.exec(v);
+    if (!m) return false;
+    return +m[1] <= 23 && +m[2] <= 59;
   }
 
   function montarMensagem() {
@@ -291,8 +310,8 @@
     linhas.push('*Registro de Atividade*');
     linhas.push('');
     linhas.push('Secretaria: ' + fields.secretaria.value.trim());
-    linhas.push('Data: ' + formatarData(fields.data.value));
-    linhas.push('Horário: ' + fields.horario.value);
+    linhas.push('Data: ' + fields.data.value.trim());
+    linhas.push('Horário: ' + fields.horario.value.trim());
     linhas.push('Unidade/Bairro: ' + fields.unidade.value.trim());
     linhas.push('');
     linhas.push('Atividade:');
@@ -362,6 +381,13 @@
     atualizarPreview();
   });
 
+  fields.data.addEventListener('input', function () {
+    fields.data.value = mascaraData(fields.data.value);
+  });
+  fields.horario.addEventListener('input', function () {
+    fields.horario.value = mascaraHora(fields.horario.value);
+  });
+
   Object.keys(fields).forEach(function (k) {
     fields[k].addEventListener('input', atualizarPreview);
     fields[k].addEventListener('change', atualizarPreview);
@@ -381,7 +407,6 @@
   document.getElementById('btnCopiar').addEventListener('click', function () {
     var texto = montarMensagem();
     function ok() {
-      var old = counter.textContent;
       counter.textContent = 'Texto copiado!';
       setTimeout(function () { atualizarPreview(); }, 1500);
     }
@@ -400,8 +425,6 @@
   function validar() {
     var nomes = {
       secretaria: 'Secretaria',
-      data: 'Data',
-      horario: 'Horário',
       unidade: 'Unidade/Bairro',
       atividade: 'Atividade',
       objetivo: 'Objetivo',
@@ -411,6 +434,8 @@
       resultados: 'Resultados'
     };
     var faltando = [];
+    if (!dataValida(fields.data.value.trim())) faltando.push('Data (DD/MM/AAAA)');
+    if (!horaValida(fields.horario.value.trim())) faltando.push('Horário (HH:MM)');
     Object.keys(nomes).forEach(function (k) {
       if (!String(fields[k].value).trim()) faltando.push(nomes[k]);
     });
