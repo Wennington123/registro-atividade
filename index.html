@@ -44,7 +44,7 @@
     margin-bottom: 12px;
   }
   .logos img { height: 34px; width: auto; max-width: 30%; object-fit: contain; }
-  main { padding: 16px; padding-bottom: 132px; max-width: 640px; margin: 0 auto; }
+  main { padding: 16px; padding-bottom: 168px; max-width: 640px; margin: 0 auto; }
   .card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -126,8 +126,17 @@
     border-top: 1px solid var(--border);
     padding: 12px 16px;
     padding-bottom: max(12px, env(safe-area-inset-bottom));
-    display: flex; gap: 10px;
+    display: flex; flex-direction: column; gap: 8px;
     max-width: 640px; margin: 0 auto;
+  }
+  .btns { display: flex; gap: 10px; }
+  .status {
+    font-size: .78rem;
+    color: #6b5a12;
+    background: #fff8e1;
+    border: 1px solid #f0dca0;
+    border-radius: 8px;
+    padding: 8px 10px;
   }
   .btn {
     flex: 1;
@@ -249,9 +258,12 @@
 </main>
 
 <div class="actions">
-  <button class="btn btn-ghost" type="button" id="btnCopiar">Copiar</button>
-  <button class="btn btn-ghost" type="button" id="btnLimpar">Limpar</button>
-  <button class="btn btn-primary" type="button" id="btnCompartilhar">Compartilhar</button>
+  <div class="status" id="status" hidden></div>
+  <div class="btns">
+    <button class="btn btn-ghost" type="button" id="btnCopiar">Copiar</button>
+    <button class="btn btn-ghost" type="button" id="btnLimpar">Limpar</button>
+    <button class="btn btn-primary" type="button" id="btnCompartilhar">Compartilhar</button>
+  </div>
 </div>
 
 <script>
@@ -278,6 +290,7 @@
   var fileInput = document.getElementById('f_fotos');
   var notice = document.getElementById('shareNotice');
   var btnCompartilhar = document.getElementById('btnCompartilhar');
+  var status = document.getElementById('status');
 
   function mascaraData(v) {
     var d = v.replace(/\D/g, '').slice(0, 8);
@@ -327,15 +340,6 @@
     linhas.push('Resultados:');
     linhas.push(fields.resultados.value.trim());
     return linhas.join('\n');
-  }
-
-  function suportaArquivos() {
-    if (!navigator.canShare) return false;
-    try {
-      return navigator.canShare({ files: [new File(['x'], 'x.jpg', { type: 'image/jpeg' })] });
-    } catch (e) {
-      return false;
-    }
   }
 
   function atualizarPreview() {
@@ -447,37 +451,97 @@
     return true;
   }
 
+  function setStatus(msg) {
+    if (!msg) {
+      status.hidden = true;
+      status.textContent = '';
+      return;
+    }
+    status.hidden = false;
+    status.textContent = msg;
+  }
+
+  function tentarShare(payload) {
+    return new Promise(function (resolve, reject) {
+      var p;
+      try {
+        p = navigator.share(payload);
+      } catch (e) {
+        reject(e);
+        return;
+      }
+      if (p && p.then) {
+        p.then(resolve, reject);
+      } else {
+        resolve();
+      }
+    });
+  }
+
+  function abrirWhatsApp(texto) {
+    var url = 'https://wa.me/?text=' + encodeURIComponent(texto);
+    var w = null;
+    try { w = window.open(url, '_blank'); } catch (e) { w = null; }
+    if (w) {
+      setStatus('');
+      return;
+    }
+    setStatus('Não consegui abrir o WhatsApp automaticamente. Use o botão "Copiar" e cole a mensagem no grupo.');
+  }
+
+  function compartilharTexto(texto, mensagemFalha) {
+    tentarShare({ text: texto, title: 'Registro de Atividade' }).then(function () {
+      setStatus('');
+    }, function (err) {
+      if (err && err.name === 'AbortError') { setStatus(''); return; }
+      setStatus(mensagemFalha);
+      abrirWhatsApp(texto);
+    });
+  }
+
   btnCompartilhar.addEventListener('click', function () {
     if (!validar()) return;
+
     var texto = montarMensagem();
     var files = fotos.map(function (f) { return f.file; });
 
-    if (files.length && suportaArquivos()) {
-      navigator.share({ files: files, text: texto, title: 'Registro de Atividade' })
-        .catch(function (err) { if (err && err.name !== 'AbortError') compartilharSoTexto(texto); });
+    if (!navigator.share) {
+      setStatus('Este navegador não tem compartilhamento nativo. Abrindo o WhatsApp com o texto — anexe as fotos manualmente.');
+      abrirWhatsApp(texto);
       return;
     }
-    compartilharSoTexto(texto);
+
+    var podeArquivos = false;
+    if (files.length && navigator.canShare) {
+      try { podeArquivos = navigator.canShare({ files: files }); } catch (e) { podeArquivos = false; }
+    }
+
+    setStatus('Abrindo compartilhamento...');
+
+    var tentativa = podeArquivos
+      ? tentarShare({ files: files, text: texto, title: 'Registro de Atividade' })
+      : tentarShare({ text: texto, title: 'Registro de Atividade' });
+
+    tentativa.then(function () {
+      if (files.length && !podeArquivos) {
+        setStatus('Este navegador não anexa imagens pelo compartilhamento. Anexe as fotos manualmente no grupo.');
+        return;
+      }
+      setStatus('');
+    }, function (err) {
+      if (err && err.name === 'AbortError') { setStatus(''); return; }
+      if (podeArquivos) {
+        compartilharTexto(texto, 'Não deu para compartilhar. Abrindo o WhatsApp com o texto — anexe as fotos manualmente.');
+        return;
+      }
+      setStatus('Compartilhamento indisponível. Abrindo o WhatsApp com o texto — anexe as fotos manualmente.');
+      abrirWhatsApp(texto);
+    });
   });
-
-  function compartilharSoTexto(texto) {
-    if (navigator.share) {
-      navigator.share({ text: texto, title: 'Registro de Atividade' })
-        .catch(function (err) {
-          if (err && err.name !== 'AbortError') abrirWhatsAppTexto(texto);
-        });
-      return;
-    }
-    abrirWhatsAppTexto(texto);
-  }
-
-  function abrirWhatsAppTexto(texto) {
-    window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
-  }
 
   if (!navigator.share) {
     notice.hidden = false;
-    notice.textContent = 'Navegador sem compartilhamento nativo. O botão abrirá o WhatsApp Web com o texto; anexe as imagens manualmente.';
+    notice.textContent = 'Navegador sem compartilhamento nativo. O botão abrirá o WhatsApp com o texto; anexe as imagens manualmente.';
   }
 
   atualizarPreview();
