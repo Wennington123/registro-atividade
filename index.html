@@ -208,30 +208,30 @@
       <textarea id="f_atividade" placeholder="Descreva a atividade realizada"></textarea>
     </div>
     <div class="field">
-      <label for="f_objetivo">Objetivo</label>
+      <label class="req" for="f_objetivo">Objetivo</label>
       <textarea id="f_objetivo" placeholder="Objetivo da atividade"></textarea>
     </div>
     <div class="field">
-      <label for="f_publico">Público-Alvo</label>
+      <label class="req" for="f_publico">Público-Alvo</label>
       <input id="f_publico" placeholder="Ex.: Famílias em situação de vulnerabilidade">
     </div>
     <div class="field">
-      <label for="f_qtd">Quantidade de Participantes/Usuários</label>
+      <label class="req" for="f_qtd">Quantidade de Participantes/Usuários</label>
       <input id="f_qtd" type="number" min="0" inputmode="numeric" placeholder="0">
     </div>
     <div class="field">
-      <label for="f_responsavel">Responsável</label>
+      <label class="req" for="f_responsavel">Responsável</label>
       <input id="f_responsavel" placeholder="Nome do responsável">
     </div>
     <div class="field">
-      <label for="f_resultados">Resultados</label>
+      <label class="req" for="f_resultados">Resultados</label>
       <textarea id="f_resultados" placeholder="Resultados alcançados"></textarea>
     </div>
   </div>
 
   <div class="card">
     <div class="field">
-      <label for="f_fotos">Registro Fotográfico</label>
+      <label class="req" for="f_fotos">Registro Fotográfico</label>
       <label class="photo-input" for="f_fotos">
         <span>+ Adicionar imagem do celular</span>
       </label>
@@ -398,10 +398,23 @@
   });
 
   function validar() {
+    var nomes = {
+      secretaria: 'Secretaria',
+      data: 'Data',
+      horario: 'Horário',
+      unidade: 'Unidade/Bairro',
+      atividade: 'Atividade',
+      objetivo: 'Objetivo',
+      publico: 'Público-Alvo',
+      qtd: 'Quantidade de Participantes/Usuários',
+      responsavel: 'Responsável',
+      resultados: 'Resultados'
+    };
     var faltando = [];
-    if (!fields.unidade.value.trim()) faltando.push('Unidade/Bairro');
-    if (!fields.data.value) faltando.push('Data');
-    if (!fields.atividade.value.trim()) faltando.push('Atividade');
+    Object.keys(nomes).forEach(function (k) {
+      if (!String(fields[k].value).trim()) faltando.push(nomes[k]);
+    });
+    if (fotos.length === 0) faltando.push('Registro Fotográfico');
     if (faltando.length) {
       alert('Preencha os campos obrigatórios:\n- ' + faltando.join('\n- '));
       return false;
