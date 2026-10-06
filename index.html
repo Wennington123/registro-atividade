@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a6b3c">
+<title>Registro de Atividade</title>
+<style>
+  :root {
+    --green: #1a6b3c;
+    --green-dark: #124d2b;
+    --bg: #f2f4f3;
+    --card: #ffffff;
+    --text: #1c1f1d;
+    --muted: #6b726e;
+    --border: #d7ddd9;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+  header {
+    background: var(--green);
+    color: #fff;
+    padding: 16px;
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+  header h1 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+  header p { margin: 4px 0 0; font-size: .8rem; opacity: .85; }
+  .logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 8px 14px;
+    margin-bottom: 12px;
+  }
+  .logos img { height: 34px; width: auto; max-width: 30%; object-fit: contain; }
+  main { padding: 16px; padding-bottom: 132px; max-width: 640px; margin: 0 auto; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: .85rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .req::after { content: " *"; color: #c0392b; }
+  input, textarea, select {
+    width: 100%;
+    font: inherit;
+    font-size: 16px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fbfcfb;
+    color: var(--text);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  textarea { resize: vertical; min-height: 84px; }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(26,107,60,.15);
+  }
+  .row { display: flex; gap: 12px; }
+  .row .field { flex: 1; margin-bottom: 16px; }
+  .hint { font-size: .75rem; color: var(--muted); margin-top: 6px; }
+
+  .photo-input {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: .9rem;
+    cursor: pointer;
+    text-align: center;
+  }
+  .photo-input:active { border-color: var(--green); color: var(--green); }
+  input[type=file] { display: none; }
+
+  .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .thumb {
+    position: relative;
+    width: 84px; height: 84px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #000;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb button {
+    position: absolute; top: 2px; right: 2px;
+    width: 22px; height: 22px;
+    border: none; border-radius: 50%;
+    background: rgba(0,0,0,.65); color: #fff;
+    font-size: 14px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .actions {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    display: flex; gap: 10px;
+    max-width: 640px; margin: 0 auto;
+  }
+  .btn {
+    flex: 1;
+    font: inherit; font-size: 1rem; font-weight: 600;
+    padding: 14px;
+    border: none; border-radius: 10px;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--green); color: #fff; }
+  .btn-primary:active { background: var(--green-dark); }
+  .btn-ghost { flex: 0 0 auto; background: #eceeec; color: var(--text); padding: 14px 16px; }
+
+  .preview {
+    white-space: pre-wrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .8rem;
+    background: #f5f7f5;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    max-height: 280px;
+    overflow: auto;
+  }
+  .counter { font-size: .72rem; color: var(--muted); margin-top: 6px; text-align: right; }
+  .counter.over { color: #c0392b; }
+  .warn {
+    font-size: .8rem;
+    background: #fff8e1;
+    border: 1px solid #f0dca0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    color: #6b5a12;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logos">
+    <img src="logos/logo_cras.png" alt="CRAS">
+    <img src="logos/sps_logo.png" alt="SPS">
+    <img src="logos/nova_logo.jpeg.jpg" alt="Logo">
+  </div>
+  <h1>Registro de Atividade</h1>
+  <p>Preencha, compartilhe e escolha o grupo no WhatsApp</p>
+</header>
+
+<main>
+  <div class="warn" id="shareNotice" hidden></div>
+
+  <div class="card">
+    <div class="field">
+      <label class="req" for="f_secretaria">Secretaria</label>
+      <input id="f_secretaria" value="Secretaria Executiva de Assistência Social">
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label class="req" for="f_data">Data</label>
+        <input id="f_data" type="date">
+      </div>
+      <div class="field">
+        <label class="req" for="f_horario">Horário</label>
+        <input id="f_horario" type="time">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="req" for="f_unidade">Unidade/Bairro</label>
+      <input id="f_unidade" placeholder="Ex.: CRAS Vila Nova">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label class="req" for="f_atividade">Atividade</label>
+      <textarea id="f_atividade" placeholder="Descreva a atividade realizada"></textarea>
+    </div>
+    <div class="field">
+      <label for="f_objetivo">Objetivo</label>
+      <textarea id="f_objetivo" placeholder="Objetivo da atividade"></textarea>
+    </div>
+    <div class="field">
+      <label for="f_publico">Público-Alvo</label>
+      <input id="f_publico" placeholder="Ex.: Famílias em situação de vulnerabilidade">
+    </div>
+    <div class="field">
+      <label for="f_qtd">Quantidade de Participantes/Usuários</label>
+      <input id="f_qtd" type="number" min="0" inputmode="numeric" placeholder="0">
+    </div>
+    <div class="field">
+      <label for="f_responsavel">Responsável</label>
+      <input id="f_responsavel" placeholder="Nome do responsável">
+    </div>
+    <div class="field">
+      <label for="f_resultados">Resultados</label>
+      <textarea id="f_resultados" placeholder="Resultados alcançados"></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label for="f_fotos">Registro Fotográfico</label>
+      <label class="photo-input" for="f_fotos">
+        <span>+ Adicionar imagem do celular</span>
+      </label>
+      <input id="f_fotos" type="file" accept="image/*" capture="environment" multiple>
+      <div class="thumbs" id="thumbs"></div>
+      <div class="hint">As imagens vão junto com a mensagem ao compartilhar.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label>Prévia da mensagem</label>
+    <div class="preview" id="preview"></div>
+    <div class="counter" id="counter"></div>
+  </div>
+</main>
+
+<div class="actions">
+  <button class="btn btn-ghost" type="button" id="btnCopiar">Copiar</button>
+  <button class="btn btn-ghost" type="button" id="btnLimpar">Limpar</button>
+  <button class="btn btn-primary" type="button" id="btnCompartilhar">Compartilhar</button>
+</div>
+
+<script>
+(function () {
+  var fotos = [];
+  var LIMITE_LEGENDA = 1024;
+
+  var fields = {
+    secretaria: document.getElementById('f_secretaria'),
+    data: document.getElementById('f_data'),
+    horario: document.getElementById('f_horario'),
+    unidade: document.getElementById('f_unidade'),
+    atividade: document.getElementById('f_atividade'),
+    objetivo: document.getElementById('f_objetivo'),
+    publico: document.getElementById('f_publico'),
+    qtd: document.getElementById('f_qtd'),
+    responsavel: document.getElementById('f_responsavel'),
+    resultados: document.getElementById('f_resultados')
+  };
+
+  var preview = document.getElementById('preview');
+  var counter = document.getElementById('counter');
+  var thumbs = document.getElementById('thumbs');
+  var fileInput = document.getElementById('f_fotos');
+  var notice = document.getElementById('shareNotice');
+  var btnCompartilhar = document.getElementById('btnCompartilhar');
+
+  function formatarData(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    if (p.length !== 3) return iso;
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+
+  function montarMensagem() {
+    var linhas = [];
+    linhas.push('*Registro de Atividade*');
+    linhas.push('');
+    linhas.push('Secretaria: ' + fields.secretaria.value.trim());
+    linhas.push('Data: ' + formatarData(fields.data.value));
+    linhas.push('Horário: ' + fields.horario.value);
+    linhas.push('Unidade/Bairro: ' + fields.unidade.value.trim());
+    linhas.push('');
+    linhas.push('Atividade:');
+    linhas.push(fields.atividade.value.trim());
+    linhas.push('');
+    linhas.push('Objetivo:');
+    linhas.push(fields.objetivo.value.trim());
+    linhas.push('');
+    linhas.push('Público-Alvo: ' + fields.publico.value.trim());
+    linhas.push('Quantidade de Participantes/Usuários: ' + fields.qtd.value.trim());
+    linhas.push('Responsável: ' + fields.responsavel.value.trim());
+    linhas.push('');
+    linhas.push('Resultados:');
+    linhas.push(fields.resultados.value.trim());
+    return linhas.join('\n');
+  }
+
+  function suportaArquivos() {
+    if (!navigator.canShare) return false;
+    try {
+      return navigator.canShare({ files: [new File(['x'], 'x.jpg', { type: 'image/jpeg' })] });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function atualizarPreview() {
+    var texto = montarMensagem();
+    preview.textContent = texto;
+    var n = texto.length;
+    counter.textContent = n + ' caracteres' + (fotos.length ? ' (legenda/limite ' + LIMITE_LEGENDA + ')' : '');
+    counter.className = 'counter' + (fotos.length && n > LIMITE_LEGENDA ? ' over' : '');
+  }
+
+  function renderThumbs() {
+    thumbs.innerHTML = '';
+    fotos.forEach(function (item, i) {
+      var div = document.createElement('div');
+      div.className = 'thumb';
+      var img = document.createElement('img');
+      img.src = item.url;
+      img.alt = item.file.name;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = '\u00d7';
+      b.setAttribute('aria-label', 'Remover imagem');
+      b.onclick = function () { removerFoto(i); };
+      div.appendChild(img);
+      div.appendChild(b);
+      thumbs.appendChild(div);
+    });
+  }
+
+  function removerFoto(i) {
+    URL.revokeObjectURL(fotos[i].url);
+    fotos.splice(i, 1);
+    renderThumbs();
+    atualizarPreview();
+  }
+
+  fileInput.addEventListener('change', function () {
+    Array.prototype.forEach.call(fileInput.files, function (file) {
+      fotos.push({ file: file, url: URL.createObjectURL(file) });
+    });
+    fileInput.value = '';
+    renderThumbs();
+    atualizarPreview();
+  });
+
+  Object.keys(fields).forEach(function (k) {
+    fields[k].addEventListener('input', atualizarPreview);
+    fields[k].addEventListener('change', atualizarPreview);
+  });
+
+  document.getElementById('btnLimpar').addEventListener('click', function () {
+    Object.keys(fields).forEach(function (k) {
+      fields[k].value = (k === 'secretaria') ? 'Secretaria Executiva de Assistência Social' : '';
+    });
+    fotos.forEach(function (f) { URL.revokeObjectURL(f.url); });
+    fotos = [];
+    renderThumbs();
+    atualizarPreview();
+    window.scrollTo(0, 0);
+  });
+
+  document.getElementById('btnCopiar').addEventListener('click', function () {
+    var texto = montarMensagem();
+    function ok() {
+      var old = counter.textContent;
+      counter.textContent = 'Texto copiado!';
+      setTimeout(function () { atualizarPreview(); }, 1500);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(ok, function () {});
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = texto;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); ok(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+  });
+
+  function validar() {
+    var faltando = [];
+    if (!fields.unidade.value.trim()) faltando.push('Unidade/Bairro');
+    if (!fields.data.value) faltando.push('Data');
+    if (!fields.atividade.value.trim()) faltando.push('Atividade');
+    if (faltando.length) {
+      alert('Preencha os campos obrigatórios:\n- ' + faltando.join('\n- '));
+      return false;
+    }
+    return true;
+  }
+
+  btnCompartilhar.addEventListener('click', function () {
+    if (!validar()) return;
+    var texto = montarMensagem();
+    var files = fotos.map(function (f) { return f.file; });
+
+    if (files.length && suportaArquivos()) {
+      navigator.share({ files: files, text: texto, title: 'Registro de Atividade' })
+        .catch(function (err) { if (err && err.name !== 'AbortError') compartilharSoTexto(texto); });
+      return;
+    }
+    compartilharSoTexto(texto);
+  });
+
+  function compartilharSoTexto(texto) {
+    if (navigator.share) {
+      navigator.share({ text: texto, title: 'Registro de Atividade' })
+        .catch(function (err) {
+          if (err && err.name !== 'AbortError') abrirWhatsAppTexto(texto);
+        });
+      return;
+    }
+    abrirWhatsAppTexto(texto);
+  }
+
+  function abrirWhatsAppTexto(texto) {
+    window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
+  }
+
+  if (!navigator.share) {
+    notice.hidden = false;
+    notice.textContent = 'Navegador sem compartilhamento nativo. O botão abrirá o WhatsApp Web com o texto; anexe as imagens manualmente.';
+  }
+
+  atualizarPreview();
+})();
+</script>
+</body>
+</html>
