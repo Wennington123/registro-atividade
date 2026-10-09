@@ -292,6 +292,120 @@
   var btnCompartilhar = document.getElementById('btnCompartilhar');
   var status = document.getElementById('status');
 
+  var CHAVE_RASCUNHO = 'registroAtividade.rascunho';
+  var DB_NOME = 'registroAtividade';
+  var DB_STORE = 'fotos';
+
+  function coletarCampos() {
+    var obj = {};
+    Object.keys(fields).forEach(function (k) { obj[k] = fields[k].value; });
+    return obj;
+  }
+
+  function salvarRascunhoTexto() {
+    try {
+      localStorage.setItem(CHAVE_RASCUNHO, JSON.stringify(coletarCampos()));
+    } catch (e) {}
+  }
+
+  function lerRascunhoTexto() {
+    try {
+      var raw = localStorage.getItem(CHAVE_RASCUNHO);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function apagarRascunhoTexto() {
+    try { localStorage.removeItem(CHAVE_RASCUNHO); } catch (e) {}
+  }
+
+  function abrirDB() {
+    return new Promise(function (resolve, reject) {
+      if (!window.indexedDB) { reject(new Error('sem indexedDB')); return; }
+      var req = indexedDB.open(DB_NOME, 1);
+      req.onupgradeneeded = function () {
+        req.result.createObjectStore(DB_STORE, { keyPath: 'id', autoIncrement: true });
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }
+
+  function salvarFotosDB() {
+    var arquivos = fotos.map(function (f) { return f.file; });
+    return abrirDB().then(function (db) {
+      return new Promise(function (resolve) {
+        var tx = db.transaction(DB_STORE, 'readwrite');
+        var store = tx.objectStore(DB_STORE);
+        store.clear();
+        arquivos.forEach(function (file) {
+          store.add({ nome: file.name || 'imagem', tipo: file.type || '', blob: file });
+        });
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { resolve(); };
+        tx.onabort = function () { resolve(); };
+      });
+    }).catch(function () {});
+  }
+
+  function lerFotosDB() {
+    return abrirDB().then(function (db) {
+      return new Promise(function (resolve) {
+        var out = [];
+        var tx = db.transaction(DB_STORE, 'readonly');
+        tx.objectStore(DB_STORE).openCursor().onsuccess = function (e) {
+          var cur = e.target.result;
+          if (cur) { out.push(cur.value); cur.continue(); }
+          else { resolve(out); }
+        };
+        tx.onerror = function () { resolve([]); };
+      });
+    }).catch(function () { return []; });
+  }
+
+  function apagarFotosDB() {
+    return abrirDB().then(function (db) {
+      return new Promise(function (resolve) {
+        var tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).clear();
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { resolve(); };
+      });
+    }).catch(function () {});
+  }
+
+  function limparRascunho() {
+    apagarRascunhoTexto();
+    apagarFotosDB();
+  }
+
+  function restaurarRascunho() {
+    var dados = lerRascunhoTexto();
+    if (!dados) return;
+    Object.keys(fields).forEach(function (k) {
+      if (typeof dados[k] === 'string') fields[k].value = dados[k];
+    });
+  }
+
+  function restaurarFotos() {
+    return lerFotosDB().then(function (registros) {
+      if (!registros.length) return;
+      registros.forEach(function (r) {
+        var file;
+        try {
+          file = new File([r.blob], r.nome || 'imagem', { type: r.tipo || '' });
+        } catch (e) {
+          file = r.blob;
+        }
+        fotos.push({ file: file, url: URL.createObjectURL(file) });
+      });
+      renderThumbs();
+      atualizarPreview();
+    });
+  }
+
   function mascaraData(v) {
     var d = v.replace(/\D/g, '').slice(0, 8);
     if (d.length > 4) return d.slice(0, 2) + '/' + d.slice(2, 4) + '/' + d.slice(4);
@@ -374,6 +488,7 @@
     fotos.splice(i, 1);
     renderThumbs();
     atualizarPreview();
+    salvarFotosDB();
   }
 
   fileInput.addEventListener('change', function () {
@@ -383,6 +498,7 @@
     fileInput.value = '';
     renderThumbs();
     atualizarPreview();
+    salvarFotosDB();
   });
 
   fields.data.addEventListener('input', function () {
@@ -393,8 +509,8 @@
   });
 
   Object.keys(fields).forEach(function (k) {
-    fields[k].addEventListener('input', atualizarPreview);
-    fields[k].addEventListener('change', atualizarPreview);
+    fields[k].addEventListener('input', function () { atualizarPreview(); salvarRascunhoTexto(); });
+    fields[k].addEventListener('change', function () { atualizarPreview(); salvarRascunhoTexto(); });
   });
 
   document.getElementById('btnLimpar').addEventListener('click', function () {
@@ -405,6 +521,7 @@
     fotos = [];
     renderThumbs();
     atualizarPreview();
+    limparRascunho();
     window.scrollTo(0, 0);
   });
 
@@ -544,7 +661,9 @@
     notice.textContent = 'Navegador sem compartilhamento nativo. O botão abrirá o WhatsApp com o texto; anexe as imagens manualmente.';
   }
 
+  restaurarRascunho();
   atualizarPreview();
+  restaurarFotos();
 })();
 </script>
 </body>
