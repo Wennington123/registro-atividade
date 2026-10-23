@@ -229,6 +229,10 @@
       <input id="f_qtd" type="number" min="0" inputmode="numeric" placeholder="0">
     </div>
     <div class="field">
+      <label class="req" for="f_visitadora">Nome da Visitadora</label>
+      <input id="f_visitadora" placeholder="Nome da visitadora">
+    </div>
+    <div class="field">
       <label class="req" for="f_responsavel">Responsável</label>
       <input id="f_responsavel" placeholder="Nome do responsável">
     </div>
@@ -280,6 +284,7 @@
     objetivo: document.getElementById('f_objetivo'),
     publico: document.getElementById('f_publico'),
     qtd: document.getElementById('f_qtd'),
+    visitadora: document.getElementById('f_visitadora'),
     responsavel: document.getElementById('f_responsavel'),
     resultados: document.getElementById('f_resultados')
   };
@@ -449,6 +454,7 @@
     linhas.push('');
     linhas.push('Público-Alvo: ' + fields.publico.value.trim());
     linhas.push('Quantidade de Participantes/Usuários: ' + fields.qtd.value.trim());
+    linhas.push('Nome da Visitadora: ' + fields.visitadora.value.trim());
     linhas.push('Responsável: ' + fields.responsavel.value.trim());
     linhas.push('');
     linhas.push('Resultados:');
@@ -551,6 +557,7 @@
       objetivo: 'Objetivo',
       publico: 'Público-Alvo',
       qtd: 'Quantidade de Participantes/Usuários',
+      visitadora: 'Nome da Visitadora',
       responsavel: 'Responsável',
       resultados: 'Resultados'
     };
